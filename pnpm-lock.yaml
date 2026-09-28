@@ -171,6 +171,9 @@ importers:
 
   artifacts/api-server:
     dependencies:
+      '@vectorize-io/hindsight-client':
+        specifier: ^0.10.1
+        version: 0.10.1
       '@workspace/api-zod':
         specifier: workspace:*
         version: link:../../lib/api-zod
@@ -1696,6 +1699,9 @@ packages:
 
   '@types/unist@3.0.3':
     resolution: {integrity: sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q==}
+
+  '@vectorize-io/hindsight-client@0.10.1':
+    resolution: {integrity: sha512-83FsMz/FyFwKooN1KsBZq4cWLB4RJQcTTnmxpZ0n4bXZih1iySLCtR88OAuqhqSnT3ajw4Nx5Oa8OwrrBuI6Lw==}
 
   '@vitejs/plugin-react@5.2.0':
     resolution: {integrity: sha512-YmKkfhOAi3wsB1PhJq5Scj3GXMn3WvtQ/JC0xoopuHoXSdmtdStOpFrYaT1kie2YgFBcIe64ROzMYRjCrYOdYw==}
@@ -4331,6 +4337,8 @@ snapshots:
       '@types/node': 25.9.6
 
   '@types/unist@3.0.3': {}
+
+  '@vectorize-io/hindsight-client@0.10.1': {}
 
   '@vitejs/plugin-react@5.2.0(vite@7.3.6(@types/node@25.9.6)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.13)(yaml@2.9.0))':
     dependencies:

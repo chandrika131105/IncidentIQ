@@ -1,0 +1,1 @@
+- [Hindsight and Groq integration](hindsight-groq-integration.md) — use Hindsight as the only persistent incident memory and Groq for server-side analysis.

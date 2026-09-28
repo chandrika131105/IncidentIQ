@@ -1,6 +1,6 @@
-# [Project name]
+# IncidentIQ
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+An AI incident response workspace that recalls operational history from Hindsight, analyzes incidents with Groq, and retains outcomes for future investigations.
 
 ## Run & Operate
 
@@ -22,15 +22,23 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/incidentiq/src/pages/workspace.tsx` — investigation workspace and retain workflow
+- `artifacts/incidentiq/src/pages/history.tsx` — searchable Hindsight memory browser
+- `artifacts/api-server/src/lib/incidentiq.ts` — Hindsight SDK, Groq API, demo memory seed, and analysis orchestration
+- `artifacts/api-server/src/routes/incidents.ts` — incident and memory endpoints
+- `lib/api-spec/openapi.yaml` — source-of-truth API contract
+- `README.md` — setup, architecture, and demo instructions
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Hindsight is the persistent incident-memory system; there is no local vector database or fake recall fallback.
+- The workspace uses the existing shared Express API service and OpenAPI/codegen workflow.
+- Groq is called server-side through its OpenAI-compatible chat completions endpoint; `GROQ_API_KEY` never reaches the browser.
+- Demo memory seeding explicitly creates or updates the configured Hindsight bank before retaining the eight incident records.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+IncidentIQ lets responders submit an incident, inspect Groq's structured analysis, see the Hindsight memories that shaped it, browse historical incident memory, and retain confirmed outcomes for future investigations.
 
 ## User preferences
 

@@ -1,0 +1,391 @@
+Build a full-stack web application called "IncidentIQ".
+
+IMPORTANT CONTEXT:
+This application is for a hackathon where Hindsight by Vectorize is a mandatory technology. The project must demonstrate an AI agent that uses persistent memory to learn from previous software incidents and provide better responses to future incidents.
+
+PROJECT IDEA:
+IncidentIQ is an AI Incident Response Agent for software/DevOps teams.
+
+The agent should:
+1. Receive a production incident.
+2. Recall relevant historical incidents from Hindsight.
+3. Use the recalled memories together with the current incident to generate an analysis.
+4. Recommend investigation steps and possible resolutions.
+5. Store new incident knowledge/outcomes in Hindsight so future incidents can benefit from it.
+
+CRITICAL REQUIREMENT:
+Hindsight MUST be the actual persistent memory system.
+
+Do NOT replace Hindsight with:
+- FAISS
+- Chroma
+- Pinecone
+- Weaviate
+- another vector database
+- SQLite as a substitute for memory
+- an in-memory Python dictionary
+- localStorage
+- fake/mock memory
+
+Use the current official Hindsight documentation and SDK:
+https://hindsight.vectorize.io/
+https://docs.hindsight.vectorize.io/
+https://docs.dev.hindsight.vectorize.io/python-sdk/
+
+Before implementing Hindsight, verify the CURRENT official API/SDK syntax from the documentation. Do not guess API method names.
+
+TECH STACK:
+
+Frontend:
+- React
+- Vite
+- Tailwind CSS
+
+Backend:
+- Python
+- FastAPI
+- Pydantic
+
+AI:
+- Use an LLM API that can be configured through environment variables.
+- Prefer a provider/model with a practical free or low-cost option.
+- Do not hardcode API keys.
+
+Memory:
+- Hindsight Cloud/API
+- Use actual Hindsight retain and recall functionality.
+
+ARCHITECTURE:
+
+User
+  ↓
+React Dashboard
+  ↓
+FastAPI Backend
+  ↓
+Incident Response Agent
+  ├── Hindsight Recall
+  ├── LLM Reasoning
+  └── Hindsight Retain
+  ↓
+Context-aware Incident Analysis
+
+CORE HINDSIGHT WORKFLOW:
+
+When an incident is submitted:
+
+1. Build a meaningful recall query from the incident.
+2. Call Hindsight recall.
+3. Retrieve relevant historical incidents.
+4. Give the current incident + recalled memories to the LLM.
+5. Generate a structured response.
+6. Clearly show which memories were recalled.
+7. Allow the incident outcome to be retained in Hindsight.
+
+If no relevant memory is found, explicitly tell the user:
+"No relevant historical incidents were found in memory."
+
+Do not pretend that a memory was recalled when it was not.
+
+DEMO SCENARIO:
+
+Create a seed mechanism that actually stores this incident in Hindsight:
+
+INC-101
+Service: Payment API
+Error: HTTP 500
+Symptoms: Database connection timeouts
+Root Cause: Database connection pool exhaustion
+Resolution: Increased connection pool size and fixed a connection leak
+Lessons Learned: Monitor pool utilization and investigate connection leaks after deployments.
+
+Then test a new incident:
+
+INC-115
+Service: Payment API
+Error: HTTP 500
+Symptoms: Database connections are timing out again.
+
+IncidentIQ should recall INC-101 and use it when generating its analysis.
+
+The UI should visibly show:
+
+"Relevant Historical Memory"
+
+INC-101
+Payment API
+Previous root cause: Database connection pool exhaustion
+Previous resolution: Increased pool size and fixed connection leak
+
+Then generate recommendations such as:
+- Check current database connection pool utilization.
+- Look for connection leaks.
+- Compare recent deployment changes.
+- Review the previous resolution.
+
+These recommendations must be generated using the actual recalled Hindsight memory, not hardcoded.
+
+UI:
+
+Create a professional, modern, responsive dashboard called:
+
+IncidentIQ
+
+Subtitle:
+"An incident response agent that learns from operational history."
+
+Include:
+
+1. Header
+- IncidentIQ
+- Hindsight connection status
+- LLM connection status
+
+2. New Incident Form
+Fields:
+- Incident ID
+- Service
+- Severity
+- Error message
+- Symptoms
+- Description
+
+Button:
+"Investigate Incident"
+
+3. AI Analysis
+Show:
+- Incident summary
+- Probable root causes
+- Recommended investigation steps
+- Recommended resolution
+- Confidence
+- Severity
+
+4. Hindsight Memory Panel
+Show:
+- Number of memories recalled
+- Historical incident IDs
+- Relevant memory text
+- Why each memory is relevant, if available
+
+Make it visually obvious that Hindsight contributed to the answer.
+
+5. Memory Trace
+Show a simple flow:
+
+Current Incident
+↓
+Hindsight Recall
+↓
+Historical Memories
+↓
+LLM Analysis
+↓
+Recommendation
+
+6. Retain Outcome section
+Allow the user to enter:
+- Actual root cause
+- Resolution
+- Outcome
+- Lessons learned
+
+Then store this information in Hindsight.
+
+BACKEND API:
+
+Create clean endpoints such as:
+
+GET /api/health
+GET /api/memory/status
+POST /api/incidents/investigate
+POST /api/incidents/retain
+GET /api/incidents/memories
+
+Use Pydantic models for request and response validation.
+
+ERROR HANDLING:
+
+Handle:
+- missing Hindsight configuration
+- invalid Hindsight credentials
+- Hindsight unavailable
+- LLM failure
+- empty incident
+- invalid input
+- no relevant memories
+
+Never expose API keys or stack traces to the frontend.
+
+ENVIRONMENT VARIABLES:
+
+Create .env.example with appropriate variables such as:
+
+HINDSIGHT_API_URL=
+HINDSIGHT_API_KEY=
+HINDSIGHT_BANK_ID=
+LLM_API_KEY=
+LLM_MODEL=
+
+Use environment variables everywhere.
+
+DEMO DATA:
+
+Create realistic synthetic incident data for:
+- Payment API
+- Authentication Service
+- Order Service
+- Notification Service
+- Database Service
+
+Create at least 8 realistic incidents.
+
+Each should contain:
+- incident ID
+- service
+- severity
+- error
+- symptoms
+- root cause
+- resolution
+- lessons learned
+
+Provide a script or endpoint to seed these incidents into Hindsight.
+
+Do not fake the recall results.
+
+PROJECT STRUCTURE:
+
+Create a clean structure similar to:
+
+incidentiq/
+  frontend/
+    src/
+      components/
+      pages/
+      services/
+      types/
+  backend/
+    app/
+      api/
+      models/
+      services/
+      core/
+      main.py
+    requirements.txt
+  scripts/
+  data/
+  .env.example
+  README.md
+
+You may improve this structure if necessary.
+
+README:
+
+Create a detailed README containing:
+
+1. Project overview
+2. Problem being solved
+3. Why persistent memory matters
+4. Architecture
+5. Hindsight integration
+6. Retain workflow
+7. Recall workflow
+8. AI agent workflow
+9. Setup instructions
+10. Environment variables
+11. How to seed demo data
+12. How to run the application
+13. Demo scenario
+14. Before/after memory behavior
+15. Limitations
+16. Future improvements
+
+Include a Mermaid architecture diagram if useful.
+
+TESTING:
+
+Add basic tests for:
+- health endpoint
+- incident validation
+- Hindsight configuration
+- investigation endpoint
+- no-memory scenario
+- memory-recall scenario
+
+Do not replace the actual Hindsight integration with a fake memory system just to make tests pass.
+
+IMPORTANT DEVELOPMENT PROCESS:
+
+Do NOT blindly generate the entire application and assume it works.
+
+Work in stages:
+
+PHASE 1:
+Create the project structure.
+
+PHASE 2:
+Set up backend and dependencies.
+
+PHASE 3:
+Set up Hindsight configuration.
+
+PHASE 4:
+Verify a real Hindsight connection.
+
+PHASE 5:
+Implement and test actual Hindsight retain.
+
+PHASE 6:
+Implement and test actual Hindsight recall.
+
+PHASE 7:
+Implement the AI Incident Response Agent.
+
+PHASE 8:
+Implement the React dashboard.
+
+PHASE 9:
+Connect frontend and backend.
+
+PHASE 10:
+Seed realistic incident memories.
+
+PHASE 11:
+Run the complete before/after memory demonstration.
+
+PHASE 12:
+Run tests and fix errors.
+
+At each phase, verify that the implementation works before continuing.
+
+Do not add unnecessary:
+- authentication
+- payments
+- Kubernetes
+- microservices
+- complex databases
+- multi-agent systems
+
+Keep the scope focused.
+
+SUCCESS CRITERIA:
+
+The finished application must clearly demonstrate these three things:
+
+1. IncidentIQ solves a realistic software incident-response problem.
+2. Hindsight actually stores and recalls previous incident knowledge.
+3. The agent produces a more context-aware response because of recalled memory.
+
+The most important demo should be:
+
+WITHOUT MEMORY:
+A new Payment API incident produces a generic troubleshooting response.
+
+WITH HINDSIGHT MEMORY:
+A similar incident causes IncidentIQ to recall INC-101 and use its previous root cause and resolution to produce a more context-aware recommendation.
+
+Prioritize a WORKING Hindsight integration and a reliable demo over visual complexity.
+
+Start by creating the project structure and tell me what you created before moving to the next implementation phase.

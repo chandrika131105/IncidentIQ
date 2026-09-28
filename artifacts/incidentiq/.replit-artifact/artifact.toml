@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "IncidentIQ"
+description = "An AI incident response dashboard that recalls operational history from Hindsight, analyzes production incidents, and retains outcomes for future investigations."
+version = "1.0.0"
+id = "artifacts/incidentiq"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22210
+
+[services.development]
+run = "pnpm --filter @workspace/incidentiq run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/incidentiq", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/incidentiq/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22210"
+BASE_PATH = "/"

@@ -1,249 +1,231 @@
-````markdown
+<div align="center">
+
 # IncidentIQ
 
-IncidentIQ is an AI incident response agent for software and DevOps teams. It recalls relevant operational history from Hindsight, gives that history to a Groq-powered analysis agent, and lets the team retain the confirmed outcome so future investigations improve.
+### Turn past incident experience into a better starting point for the next one.
 
-## The problem
+IncidentIQ is an AI-assisted incident investigation workspace for software and DevOps teams. It searches persistent memory for similar incidents, gives that historical context to an AI analysis service, and shows responders the evidence behind the suggestions. Once an incident is resolved, the team can retain what it learned for future investigations.
 
-During an incident, responders need more than a generic troubleshooting checklist. They need the team's previous root causes, resolutions, and lessons while the current signal is still changing. IncidentIQ turns those past incidents into persistent, searchable context.
+[![Open live demo](https://img.shields.io/badge/OPEN%20LIVE%20DEMO-374151?style=for-the-badge)](https://incident-iq-manager--chandrikapasup1.replit.app)
+[![View source](https://img.shields.io/badge/VIEW%20SOURCE-4B5563?style=for-the-badge&logo=github&logoColor=white)](https://github.com/chandrika131105/IncidentIQ)
 
-## Why persistent memory matters
+<br />
 
-The demo is designed around two different behaviors:
+![React](https://img.shields.io/badge/React-19.1-4B5563?style=flat-square&logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-4B5563?style=flat-square&logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-7-4B5563?style=flat-square&logo=vite&logoColor=white)
+![Express](https://img.shields.io/badge/Express-5-4B5563?style=flat-square&logo=express&logoColor=white)
+![OpenAPI](https://img.shields.io/badge/API-OpenAPI-4B5563?style=flat-square&logo=swagger&logoColor=white)
 
-- Without memory, a new incident receives a current-context-only analysis.
-- With Hindsight memory, a similar incident recalls the previous incident, shows the evidence in the UI, and gives the Groq agent that evidence before it recommends next steps.
+</div>
 
-Hindsight is the source of truth for incident memory. The app does not use a local vector store, a substitute database, local storage, or a fake recall layer.
+<br />
 
-## Architecture
+<p align="center">
+  <img src="screenshots/incidentiq-final.jpg" alt="IncidentIQ incident investigation workspace" width="100%" />
+</p>
+
+<p align="center"><sub>Investigation workspace · Describe an incident, inspect relevant history, and retain the team's findings.</sub></p>
+
+---
+
+## Why IncidentIQ?
+
+When a production issue occurs, responders often have to piece together what happened from alerts, logs, documentation, and conversations. The team may already have solved a similar problem, but that experience can be difficult to find while an incident is unfolding.
+
+IncidentIQ is designed to make that operational history useful at investigation time. A responder enters the current incident, the system searches previously retained incident memories, and an AI service uses the current details and recalled context to generate a structured analysis.
+
+The goal is not to replace responders or automatically declare a root cause. It is to help teams start with relevant evidence, make the reasoning easier to inspect, and preserve confirmed lessons for the next incident.
+
+## How an investigation works
+
+<table>
+  <tr>
+    <td width="25%" valign="top">
+      <h3>01 · Describe</h3>
+      Enter the incident ID, affected service, severity, observed error, symptoms, and description.
+    </td>
+    <td width="25%" valign="top">
+      <h3>02 · Recall</h3>
+      IncidentIQ searches Hindsight for relevant historical memories and returns ranked results with relevance details.
+    </td>
+    <td width="25%" valign="top">
+      <h3>03 · Investigate</h3>
+      The API sends the incident and recalled context to Groq for a structured analysis, including probable causes and a recommended resolution.
+    </td>
+    <td width="25%" valign="top">
+      <h3>04 · Learn</h3>
+      After the incident is understood, retain its confirmed root cause, resolution, outcome, and lessons for future recall.
+    </td>
+  </tr>
+</table>
 
 ```mermaid
 flowchart LR
-  User --> Dashboard[React + Vite dashboard]
-  Dashboard --> API[Express API server]
-  API --> Recall[Hindsight recall]
-  Recall --> Groq[Groq chat completions]
-  Groq --> Analysis[Structured incident analysis]
-  Analysis --> Dashboard
-  Dashboard --> Retain[Retain confirmed outcome]
-  Retain --> Hindsight[(Hindsight Cloud)]
-````
+    R[Responder submits incident] --> UI[React investigation workspace]
+    UI --> API[Express API]
+    API -->|Search incident history| H[(Hindsight memory)]
+    H -->|Ranked relevant memories| API
+    API -->|Current incident + recalled context| G[Groq analysis]
+    G -->|Structured investigation| API
+    API --> UI
+    UI -->|Confirmed root cause, resolution, and lessons| API
+    API -->|Retain outcome| H
+```
 
-The repository's shared backend service is Express/TypeScript, so the API implementation follows the workspace's existing server architecture while keeping the OpenAPI contract shared by the API and React client.
+Hindsight is the source of persistent incident memory. If memory is not configured or no relevant results are found, the API reports that state; it does not invent recalled incidents.
 
-## Hindsight integration
+## What the analysis contains
 
-The server uses the official `@vectorize-io/hindsight-client` SDK.
+The investigation response is designed to give responders a useful starting point while keeping the evidence visible:
 
-1. The user submits an incident.
-2. IncidentIQ builds a natural-language recall query from the incident ID, service, error, symptoms, and description.
-3. Hindsight returns ranked historical memories.
-4. The API exposes those memories, their incident identifiers, relevance, and why they matched.
-5. Groq receives the current incident plus the exact recalled memory text.
-6. The UI displays the memory count and the trace from incident to recall to recommendation.
-7. The user can retain the confirmed root cause, resolution, outcome, and lessons learned back into Hindsight.
+- **Incident summary** based on the submitted details.
+- **Probable root-cause signals** for the responder to investigate.
+- **Recommended resolution** generated from the current incident and any recalled context.
+- **Confidence** associated with the generated analysis.
+- **Recalled memories** with incident identifiers, relevance, and an explanation of why they matched.
+- **Investigation trace** showing the main steps from incident submission to recommendations.
+- **Warnings** when memory is unavailable or no relevant historical incidents were found.
 
-The explicit **Seed demo context** action creates or updates the configured Hindsight bank and retains eight realistic incidents, including `INC-101` for the Payment API connection-pool exhaustion scenario.
+Recommendations are decision support—not proof. Responders should check hypotheses against current telemetry and production evidence.
 
-## Groq integration
+## Project capabilities
 
-IncidentIQ calls Groq's OpenAI-compatible chat completions endpoint:
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <strong>Evidence-informed incident analysis</strong><br />
+      Bring the current incident and relevant operational history together in one investigation flow.
+    </td>
+    <td width="50%" valign="top">
+      <strong>Inspectable memory recall</strong><br />
+      Review the memories that informed an analysis, search the archive, and see why results were considered relevant.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <strong>Persistent learning loop</strong><br />
+      Record what the team confirmed after an incident so future investigations can use that experience.
+    </td>
+    <td width="50%" valign="top">
+      <strong>Demo data and memory browser</strong><br />
+      Seed eight realistic example incidents and browse retained memories in the history page.
+    </td>
+  </tr>
+</table>
 
-`POST https://api.groq.com/openai/v1/chat/completions`
+## Example demo workflow
 
-The default model is `openai/gpt-oss-120b`, which is configurable through `GROQ_MODEL`. The server requests a structured JSON response and never sends credentials to the browser.
+The demo includes historical incidents across payment, authentication, order, notification, and database services.
+
+1. Open the [live demo](https://incident-iq-manager--chandrikapasup1.replit.app).
+2. Choose **Seed demo context** to retain the sample incidents in the configured Hindsight bank.
+3. Submit a new Payment API incident with HTTP 500 errors and database connection timeouts.
+4. Review the recalled memories and the AI-generated analysis.
+5. Verify any suggested causes against the incident's actual evidence.
+6. Retain the confirmed outcome so it can inform future investigations.
+
+One seeded example, `INC-101`, describes Payment API failures caused by database connection-pool exhaustion after a connection leak. It illustrates how a previous root cause and resolution can provide useful context for a similar new signal.
+
+## Architecture and technology
+
+| Layer | Technology | Responsibility |
+| --- | --- | --- |
+| Web application | React, TypeScript, Vite, Tailwind CSS | Incident workspace, analysis display, and searchable memory history |
+| API service | Node.js, Express, TypeScript | Validates requests and coordinates memory recall, analysis, and retention |
+| Persistent memory | Hindsight Cloud | Stores, recalls, searches, and retains incident memories |
+| AI analysis | Groq chat completions | Generates structured investigation output from incident and recalled context |
+| API contract | OpenAPI | Defines shared request and response schemas |
+| Generated client | Orval, React Query, Zod | Provides frontend API hooks and schema-based validation |
+
+The Groq model defaults to `openai/gpt-oss-120b` and can be changed with `GROQ_MODEL`.
 
 ## API endpoints
 
-* `GET /api/health` — integration configuration status
-* `GET /api/memory/status` — Hindsight reachability and configured bank
-* `POST /api/incidents/investigate` — recall memories and generate an analysis
-* `POST /api/incidents/retain` — retain a confirmed incident outcome
-* `GET /api/incidents/memories?query=...` — search historical memory
-* `POST /api/incidents/seed-demo` — retain the eight demo incidents
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/health` | Check API health and integration configuration |
+| `GET` | `/api/memory/status` | Check Hindsight reachability and configured bank |
+| `POST` | `/api/incidents/investigate` | Recall memories and generate an incident analysis |
+| `GET` | `/api/incidents/memories?query=...` | Search retained incident memories |
+| `POST` | `/api/incidents/retain` | Retain a confirmed incident outcome |
+| `POST` | `/api/incidents/seed-demo` | Add the eight demo incidents to Hindsight |
 
-## Environment variables
+## Run locally
 
-Copy `.env.example` into your local environment. Store secret values as Replit Secrets.
+### Requirements
 
-| Variable            | Purpose                                                              |
-| ------------------- | -------------------------------------------------------------------- |
-| `HINDSIGHT_API_URL` | Hindsight base URL; defaults to `https://api.hindsight.vectorize.io` |
-| `HINDSIGHT_API_KEY` | Hindsight Cloud API key                                              |
-| `HINDSIGHT_BANK_ID` | Hindsight memory bank; use a unique bank for your own deployment     |
-| `GROQ_API_KEY`      | Groq API key                                                         |
-| `GROQ_MODEL`        | Groq model ID; defaults to `openai/gpt-oss-120b`                     |
+- Node.js
+- pnpm
+- A Groq API key to generate investigations
+- Hindsight Cloud credentials for persistent recall and retention
 
-**Never commit real API keys or `.env` files to the repository.**
-
-## Run the app
+Install dependencies from the repository root:
 
 ```bash
 pnpm install
-pnpm --filter @workspace/api-server run dev
+```
+
+Configure the API server with the environment variables listed below. Keep secrets in your shell environment or a secrets manager; do not commit real keys.
+
+In one terminal, build and start the API server:
+
+```bash
+pnpm --filter @workspace/api-server run build
+pnpm --filter @workspace/api-server run start
+```
+
+In a second terminal, start the frontend:
+
+```bash
 pnpm --filter @workspace/incidentiq run dev
 ```
 
-The managed workspace workflows start both services for the preview.
+The frontend's Vite development server proxies `/api` requests to the API server.
 
-## Demo scenario
+## Configuration
 
-1. Click **Seed demo context** in the IncidentIQ workspace.
-2. Submit a new incident:
+| Variable | Purpose |
+| --- | --- |
+| `GROQ_API_KEY` | Server-side Groq API key; required for AI investigations |
+| `GROQ_MODEL` | Groq model ID; defaults to `openai/gpt-oss-120b` |
+| `HINDSIGHT_API_KEY` | Hindsight Cloud API key |
+| `HINDSIGHT_API_URL` | Hindsight base URL; defaults to `https://api.hindsight.vectorize.io` |
+| `HINDSIGHT_BANK_ID` | Hindsight memory bank; defaults to `incidentiq-demo` |
 
-   * Incident ID: `INC-115`
-   * Service: `Payment API`
-   * Severity: `SEV-2`
-   * Error: `HTTP 500 errors and database connection timeouts`
-   * Symptoms: `Intermittent payment failures, HTTP 500 errors, database connection timeouts`
-   * Description: `The Payment API is intermittently failing with HTTP 500 errors. Database connections are timing out and payment requests are failing for some customers.`
-3. Run the investigation.
-4. Hindsight recalls six relevant memories, with `INC-101` shown as a 100% match.
-5. Groq generates a structured investigation with root-cause signals, investigation steps, recommendations, and confidence.
-6. Retain the confirmed outcome so `INC-115` becomes part of the persistent Hindsight memory available to future investigations.
+See `.env.example` for the variable names and defaults. API credentials are used by the server and must not be exposed in frontend code or committed to the repository.
 
-## Verified demonstration
-
-The verified IncidentIQ demonstration uses a clean Hindsight memory bank containing eight seeded historical incidents.
-
-### Historical incident — INC-101
-
-The Payment API experienced HTTP 500 errors and database connection timeouts.
-
-The recorded root cause was database connection-pool exhaustion caused by a connection leak.
-
-The resolution was to fix the connection leak and increase the connection-pool size.
-
-### New incident — INC-115
-
-The demonstration submits the new Payment API incident with:
-
-* **Incident ID:** `INC-115`
-* **Service:** `Payment API`
-* **Severity:** `SEV-2`
-* **Error:** `HTTP 500 errors and database connection timeouts`
-* **Symptoms:** `Intermittent payment failures, HTTP 500 errors, database connection timeouts`
-* **Description:** `The Payment API is intermittently failing with HTTP 500 errors. Database connections are timing out and payment requests are failing for some customers.`
-
-The verified workflow recalled **six memories**, with `INC-101` shown as a **100% match**.
-
-Groq generated a structured investigation with:
-
-* **88% confidence**
-* **3 root-cause signals**
-* **4 investigation steps**
-
-The confirmed outcome for `INC-115` was subsequently retained in Hindsight, and `INC-115` appeared in the memory bank after retention.
-
-## The learning loop
-
-```text
-Current Incident
-      ↓
-Hindsight Recall
-      ↓
-Historical Context
-      ↓
-Groq Analysis
-      ↓
-Investigation / Resolution
-      ↓
-Retain Confirmed Outcome
-      ↓
-Hindsight Memory
-```
-
-This creates a feedback loop where confirmed incident outcomes become available as context for future investigations.
-
-## Failure handling
-
-IncidentIQ is designed to avoid presenting fabricated memory or unsafe diagnostic information.
-
-* Missing Groq configuration blocks investigation with a safe configuration message.
-* Missing Hindsight configuration returns a truthful no-memory warning.
-* Hindsight outages do not fabricate recalled memories; the analysis explicitly indicates when no historical memory was used.
-* Groq failures return a safe upstream error without exposing API keys or stack traces.
-* Request bodies are validated with schemas generated from the OpenAPI contract.
-
-## Limitations and future improvements
-
-IncidentIQ is a focused prototype rather than a complete production incident-management platform.
-
-### Current limitations
-
-* IncidentIQ currently keeps the incident workspace focused on a single active investigation.
-* Authentication, team permissions, on-call integrations, live telemetry, and deployment context are intentionally out of scope for the current prototype.
-* The demonstration uses a controlled set of realistic incident records rather than a large production incident history.
-* Historical similarity is an investigation signal, not proof of the current root cause. Responders should verify hypotheses against current telemetry and production evidence.
-
-### Future improvements
-
-A production-oriented version could add:
-
-* Incident timelines
-* Role-based access
-* Alerting integrations
-* Observability platform integrations
-* Richer deployment context
-* Retention and learning analytics
-* Larger organizational incident histories
-
-## Project structure
+## Repository map
 
 ```text
 artifacts/
-├── api-server/
-│   └── src/
-│       ├── lib/
-│       │   └── incidentiq.ts
-│       └── routes/
-│           └── incidents.ts
-└── incidentiq/
-    └── src/
-        └── pages/
-            ├── workspace.tsx
-            └── history.tsx
-
+├── api-server/src/
+│   ├── lib/incidentiq.ts            # Hindsight integration and Groq analysis
+│   └── routes/incidents.ts          # Incident and memory API routes
+└── incidentiq/src/
+    └── pages/
+        ├── workspace.tsx            # Investigation and outcome-retention flow
+        └── history.tsx               # Searchable memory archive
 lib/
-└── api-spec/
-    └── openapi.yaml
+└── api-spec/openapi.yaml            # Shared API contract
+screenshots/
+└── incidentiq-final.jpg             # README product screenshot
 ```
 
-## Key implementation files
+## Reliability and safety notes
 
-* `artifacts/api-server/src/lib/incidentiq.ts` — Hindsight SDK integration, Groq analysis, demo seeding, recall, and outcome retention
-* `artifacts/api-server/src/routes/incidents.ts` — incident and memory API routes
-* `artifacts/incidentiq/src/pages/workspace.tsx` — investigation workspace and outcome retention UI
-* `artifacts/incidentiq/src/pages/history.tsx` — Hindsight memory browser
-* `lib/api-spec/openapi.yaml` — API contract
+- API request bodies are validated using schemas generated from the OpenAPI contract.
+- Provider credentials remain server-side.
+- Provider failures return safe API messages rather than exposing credentials or stack traces.
+- Missing Hindsight configuration is reported; recalled memories are not fabricated.
+- AI-generated analysis and historical similarity are aids for responders, not a substitute for production evidence.
 
-## Technology stack
+## Current scope
 
-* **Frontend:** React, TypeScript, Vite, Tailwind CSS
-* **Backend:** Node.js, Express, TypeScript
-* **Memory:** Hindsight Cloud
-* **AI:** Groq
-* **Default Model:** `openai/gpt-oss-120b`
-* **API Contract:** OpenAPI
-* **API Client:** Orval-generated hooks
+IncidentIQ is a focused prototype for demonstrating memory-assisted incident investigation. The current implementation does not include authentication, team permissions, live alerting, on-call integrations, or direct observability and deployment telemetry integrations. The demo uses a controlled set of sample incidents rather than a production organization's complete incident history.
 
-## Security
+---
 
-API credentials are used only on the server side.
-
-The following values must never be committed to the repository:
-
-```text
-GROQ_API_KEY
-HINDSIGHT_API_KEY
-```
-
-Use environment variables or your deployment platform's secret manager to provide credentials.
-
-## Links
-
-* **GitHub Repository:** [https://github.com/chandrika131105/IncidentIQ](https://github.com/chandrika131105/IncidentIQ)
-* **Live Demo:** [https://incident-iq-manager--chandrikapasup1.replit.app](https://incident-iq-manager--chandrikapasup1.replit.app)
-
-
+<p align="center">
+  <sub>IncidentIQ helps teams turn resolved incidents into useful context for the next investigation.</sub>
+</p>

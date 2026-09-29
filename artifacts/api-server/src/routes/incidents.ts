@@ -17,6 +17,7 @@ import {
   retainOutcome,
   seedDemoMemories,
   verifyHindsightConnection,
+  ProviderRequestError,
 } from "../lib/incidentiq";
 
 const router: IRouter = Router();
@@ -76,6 +77,25 @@ router.post("/incidents/investigate", async (req, res): Promise<void> => {
     });
     res.json(response);
   } catch (error) {
+    if (error instanceof ProviderRequestError) {
+      req.log.error(
+        {
+          provider: error.provider,
+          status: error.status,
+          code: error.code,
+          providerMessage: error.safeMessage,
+        },
+        "Incident analysis upstream request failed",
+      );
+      res.status(502).json({
+        error:
+          error.status === 401 && error.provider === "Groq"
+            ? "Groq authentication failed. Verify GROQ_API_KEY in Replit Secrets."
+            : "Groq could not generate an incident analysis right now.",
+      });
+      return;
+    }
+
     req.log.error({ err: error }, "Incident analysis failed");
     res.status(502).json({ error: "Groq could not generate an incident analysis right now." });
   }
@@ -99,7 +119,17 @@ router.post("/incidents/retain", async (req, res): Promise<void> => {
       }),
     );
   } catch (error) {
-    req.log.error({ err: error }, "Failed to retain incident outcome");
+    req.log.error(
+      error instanceof ProviderRequestError
+        ? {
+            provider: error.provider,
+            status: error.status,
+            code: error.code,
+            providerMessage: error.safeMessage,
+          }
+        : { err: error },
+      "Failed to retain incident outcome",
+    );
     res.status(502).json({ error: "Hindsight could not retain this incident outcome." });
   }
 });
@@ -121,7 +151,7 @@ router.get("/incidents/memories", async (req, res): Promise<void> => {
   );
 });
 
-router.post("/incidents/seed-demo", async (_req, res): Promise<void> => {
+router.post("/incidents/seed-demo", async (req, res): Promise<void> => {
   try {
     await seedDemoMemories();
     res.json(
@@ -132,6 +162,17 @@ router.post("/incidents/seed-demo", async (_req, res): Promise<void> => {
       }),
     );
   } catch (error) {
+    req.log.error(
+      error instanceof ProviderRequestError
+        ? {
+            provider: error.provider,
+            status: error.status,
+            code: error.code,
+            providerMessage: error.safeMessage,
+          }
+        : { err: error },
+      "Failed to seed Hindsight demo memories",
+    );
     res.status(502).json({ error: "Hindsight could not seed the demo memories." });
   }
 });

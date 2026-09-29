@@ -1,0 +1,301 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: incidents
+    description: Incident investigation and memory operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /health:
+    get:
+      operationId: getHealth
+      tags: [health]
+      summary: Check IncidentIQ integration health
+      responses:
+        "200":
+          description: Integration health
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /memory/status:
+    get:
+      operationId: getMemoryStatus
+      tags: [incidents]
+      summary: Check Hindsight memory status
+      responses:
+        "200":
+          description: Hindsight status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemoryStatus"
+  /incidents/investigate:
+    post:
+      operationId: investigateIncident
+      tags: [incidents]
+      summary: Recall historical incidents and analyze a new incident
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IncidentInput"
+      responses:
+        "200":
+          description: Incident analysis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestigationResponse"
+        "400":
+          description: Invalid incident
+        "502":
+          description: Upstream integration failure
+  /incidents/retain:
+    post:
+      operationId: retainIncidentOutcome
+      tags: [incidents]
+      summary: Retain an incident outcome in Hindsight
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OutcomeInput"
+      responses:
+        "200":
+          description: Retention result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RetainResponse"
+        "400":
+          description: Invalid outcome
+        "502":
+          description: Upstream integration failure
+  /incidents/memories:
+    get:
+      operationId: listIncidentMemories
+      tags: [incidents]
+      summary: Recall incident memories from Hindsight
+      parameters:
+        - name: query
+          in: query
+          required: false
+          schema:
+            type: string
+            default: software incidents and operational lessons
+      responses:
+        "200":
+          description: Historical incident memories
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemoriesResponse"
+  /incidents/seed-demo:
+    post:
+      operationId: seedDemoMemories
+      tags: [incidents]
+      summary: Seed the IncidentIQ demo memories in Hindsight
+      responses:
+        "200":
+          description: Seed result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SeedResponse"
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+        hindsightConfigured:
+          type: boolean
+        llmConfigured:
+          type: boolean
+        memoryBankId:
+          type: string
+      required:
+        - status
+        - hindsightConfigured
+        - llmConfigured
+        - memoryBankId
+    MemoryStatus:
+      type: object
+      properties:
+        provider:
+          type: string
+        configured:
+          type: boolean
+        bankId:
+          type: string
+        message:
+          type: string
+      required: [provider, configured, bankId, message]
+    IncidentInput:
+      type: object
+      properties:
+        incidentId:
+          type: string
+          minLength: 1
+        service:
+          type: string
+          minLength: 1
+        severity:
+          type: string
+          enum: [SEV-1, SEV-2, SEV-3, SEV-4]
+        error:
+          type: string
+          minLength: 1
+        symptoms:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          minLength: 1
+      required: [incidentId, service, severity, error, symptoms, description]
+    Memory:
+      type: object
+      properties:
+        id:
+          type: string
+        incidentId:
+          type: ["string", "null"]
+        text:
+          type: string
+        relevance:
+          type: number
+        whyRelevant:
+          type: string
+      required: [id, incidentId, text, relevance, whyRelevant]
+    IncidentAnalysis:
+      type: object
+      properties:
+        incident:
+          $ref: "#/components/schemas/IncidentInput"
+        summary:
+          type: string
+        probableRootCauses:
+          type: array
+          items:
+            type: string
+        investigationSteps:
+          type: array
+          items:
+            type: string
+        recommendedResolution:
+          type: string
+        confidence:
+          type: number
+        severity:
+          type: string
+        recalledMemories:
+          type: array
+          items:
+            $ref: "#/components/schemas/Memory"
+        memoryCount:
+          type: integer
+        generatedBy:
+          type: string
+      required:
+        - incident
+        - summary
+        - probableRootCauses
+        - investigationSteps
+        - recommendedResolution
+        - confidence
+        - severity
+        - recalledMemories
+        - memoryCount
+        - generatedBy
+    InvestigationResponse:
+      type: object
+      properties:
+        analysis:
+          $ref: "#/components/schemas/IncidentAnalysis"
+        trace:
+          type: array
+          items:
+            type: string
+        warnings:
+          type: array
+          items:
+            type: string
+      required: [analysis, trace, warnings]
+    OutcomeInput:
+      type: object
+      properties:
+        incidentId:
+          type: string
+          minLength: 1
+        actualRootCause:
+          type: string
+          minLength: 1
+        resolution:
+          type: string
+          minLength: 1
+        outcome:
+          type: string
+          minLength: 1
+        lessonsLearned:
+          type: string
+          minLength: 1
+      required: [incidentId, actualRootCause, resolution, outcome, lessonsLearned]
+    RetainResponse:
+      type: object
+      properties:
+        retained:
+          type: boolean
+        incidentId:
+          type: string
+        message:
+          type: string
+      required: [retained, incidentId, message]
+    MemoriesResponse:
+      type: object
+      properties:
+        memories:
+          type: array
+          items:
+            $ref: "#/components/schemas/Memory"
+        count:
+          type: integer
+        source:
+          type: string
+      required: [memories, count, source]
+    SeedResponse:
+      type: object
+      properties:
+        retained:
+          type: integer
+        incidentIds:
+          type: array
+          items:
+            type: string
+        message:
+          type: string
+      required: [retained, incidentIds, message]
+

@@ -1,0 +1,192 @@
+We need to finish and stabilize the EXISTING IncidentIQ project now. Do not rebuild or redesign the application.
+
+IMPORTANT CONTEXT:
+- IncidentIQ is an AI-powered incident-response agent using Hindsight persistent memory and Groq.
+- The frontend is already running correctly.
+- Hindsight integration/recall was previously confirmed to work.
+- The current failure occurs when clicking Investigate:
+  "Investigation could not be completed. Check the integration status and try again."
+- The previous live request trace showed:
+  1. Hindsight recall completed successfully.
+  2. Groq returned HTTP 401 Unauthorized.
+- GROQ_API_KEY has already been added to Replit Secrets.
+- Replit Agent quota may stop again, so complete as much as possible in this single task.
+
+YOUR TASK:
+
+PHASE 1 — Inspect the existing project
+1. Inspect the complete existing IncidentIQ codebase before making changes.
+2. Do NOT delete, recreate, or redesign existing functionality.
+3. Identify the exact investigation flow from frontend → backend → Hindsight → Groq → response.
+4. Focus especially on:
+   artifacts/api-server/src/lib/incidentiq.ts
+   artifacts/api-server/src/routes/incidents.ts
+   artifacts/incidentiq/src/pages/workspace.tsx
+   artifacts/incidentiq/src/pages/history.tsx
+   lib/api-spec/openapi.yaml
+   and the package/configuration files.
+
+PHASE 2 — Fix the Groq integration
+1. Find the existing Groq/OpenAI-compatible client implementation.
+2. Verify that the server reads:
+   process.env.GROQ_API_KEY
+3. Verify that the Groq API base URL is:
+   https://api.groq.com/openai/v1
+4. Verify that the configured Groq model is actually supported by the current Groq API.
+5. The project currently expects openai/gpt-oss-120b. Keep it if it is supported.
+6. If that model is not supported by the current Groq API/account, use a currently supported Groq model that works reliably and update the configuration accordingly.
+7. Do not hardcode or expose the API key anywhere.
+8. Never send GROQ_API_KEY to the browser.
+9. Never print the API key in logs.
+10. Add useful server-side error logging for Groq failures, including HTTP status and safe error message, so future debugging is possible.
+11. Keep the existing Hindsight integration unchanged unless a genuine issue is discovered.
+
+PHASE 3 — Verify Hindsight
+1. Confirm Hindsight connection/status still works.
+2. Confirm demo seeding works.
+3. Confirm the historical incident data is retained.
+4. Confirm recall occurs BEFORE Groq analysis.
+5. Confirm recalled historical context is actually passed into the Groq analysis prompt/context.
+6. Confirm the application handles the case where no relevant memory is found without inventing historical information.
+
+PHASE 4 — Verify the complete IncidentIQ workflow
+The intended demo flow is:
+
+Seed Demo Context
+→ submit INC-115
+→ Hindsight Recall
+→ Groq Analysis
+→ structured investigation result
+→ visible Memory Trace
+→ Retain confirmed outcome
+→ History shows retained information
+
+Use this demo scenario:
+
+Historical incident:
+INC-101
+Service: Payment API
+Symptoms: HTTP 500 errors and database connection timeouts
+Root cause: connection pool exhaustion and connection leak
+Resolution: increased connection pool size and fixed connection leak
+
+New incident:
+INC-115
+Service: Payment API
+Severity: SEV-2
+Observed error: HTTP 500 errors and database connection timeouts
+Symptoms: intermittent payment failures, HTTP 500 errors, database connection timeouts
+Description: The Payment API is intermittently failing with HTTP 500 errors. Database connections are timing out and payment requests are failing for some customers.
+
+Confirm that the system can:
+- recall INC-101 or other relevant historical memory
+- send that context to Groq
+- generate structured analysis
+- display the result in the existing UI
+- show the memory trace
+- retain a confirmed outcome
+- retrieve retained memory from the history page
+
+PHASE 5 — Error handling
+Make sure the application does not falsely claim an investigation succeeded when:
+- Groq is unavailable
+- Hindsight is unavailable
+- no relevant memory exists
+- the API returns an unexpected response
+
+Keep truthful error states.
+
+PHASE 6 — Testing
+After changes:
+1. Run backend typecheck/build.
+2. Run frontend typecheck/build.
+3. Check for TypeScript errors.
+4. Check for API errors.
+5. Test the actual investigation endpoint.
+6. Test Hindsight recall.
+7. Test Groq.
+8. Test retain.
+9. Test history retrieval.
+10. If possible, run the complete INC-115 demo end-to-end.
+
+Do NOT stop after merely explaining what is wrong. Actually implement the necessary fix and test it.
+
+PHASE 7 — Preserve the existing project
+Do NOT:
+- redesign the UI
+- replace React
+- replace Express
+- remove Hindsight
+- remove the Memory Trace
+- remove the history page
+- rewrite the architecture unnecessarily
+- create a new project
+- remove existing working features
+
+Only make targeted fixes and small improvements required for reliability.
+
+PHASE 8 — Prepare a complete handoff for Antigravity
+After finishing all possible fixes and tests, create a clean handoff package for continuing development outside Replit.
+
+Create a folder/file such as:
+
+incidentiq-handoff/
+
+containing:
+
+1. All project source code required to continue development.
+2. Frontend source.
+3. Backend source.
+4. API specification.
+5. package.json files.
+6. configuration files.
+7. README.
+8. .env.example files.
+9. any required database/schema/configuration files.
+10. a HANDOFF.md explaining:
+   - project architecture
+   - current working features
+   - files changed in this session
+   - exact Groq fix
+   - Hindsight integration details
+   - API endpoints
+   - environment variables required
+   - how to install dependencies
+   - how to run the project
+   - how to run frontend/backend
+   - how to test the investigation flow
+   - current known limitations
+   - anything that still needs to be completed
+   - exact next steps for development
+
+VERY IMPORTANT:
+- NEVER include actual GROQ_API_KEY.
+- NEVER include any secret values.
+- Include only .env.example with placeholder values such as:
+  GROQ_API_KEY=your_groq_api_key_here
+- Do not include node_modules.
+- Do not include build/cache files unless required.
+- Do not include credentials.
+
+Create a ZIP archive of this handoff package if the environment allows it, for example:
+
+incidentiq-handoff.zip
+
+The purpose is to download/upload this project into another coding environment such as Antigravity and continue from the exact current state.
+
+FINAL RESPONSE:
+At the end, give me a concise report containing:
+
+1. Exact root cause of the Groq 401.
+2. Exact files changed.
+3. What was fixed.
+4. Which tests passed.
+5. Whether the complete INC-115 flow works.
+6. Current Groq model being used.
+7. Current Hindsight integration status.
+8. Any remaining issue.
+9. Exact location/path of the handoff folder.
+10. Exact location/path of the ZIP handoff file if created.
+11. A complete file tree of the important project files.
+
+Do not claim something works unless you actually tested it.

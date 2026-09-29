@@ -137,6 +137,59 @@ async function ensureHindsightBank(client: HindsightClient) {
   });
 }
 
+async function verifyHindsightBank(client: HindsightClient) {
+  await client.getBankConfig(hindsightBankId);
+}
+
+function redactProviderMessage(value: unknown) {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  return value
+    .replace(/\b(?:gsk|sk)-[A-Za-z0-9_-]+\b/gi, "[REDACTED]")
+    .replace(/\b(?:api[_ -]?key|token|secret)\s*[:=]\s*\S+/gi, "$1=[REDACTED]")
+    .slice(0, 240);
+}
+
+function hindsightFailureMessage(error: unknown) {
+  const record = typeof error === "object" && error !== null ? (error as Record<string, unknown>) : {};
+  const status = typeof record.statusCode === "number" ? record.statusCode : undefined;
+  const details = redactProviderMessage(record.details) ?? redactProviderMessage(record.message);
+  return `Hindsight bank verification failed${status ? ` with HTTP ${status}` : ""}${details ? `: ${details}` : "."}`;
+}
+
+export class ProviderRequestError extends Error {
+  constructor(
+    public readonly provider: "Groq" | "Hindsight",
+    public readonly status: number | undefined,
+    public readonly code: string | undefined,
+    public readonly safeMessage: string | undefined,
+  ) {
+    super(`${provider} request failed${status ? ` with HTTP ${status}` : ""}`);
+    this.name = "ProviderRequestError";
+  }
+}
+
+async function providerErrorFromResponse(provider: "Groq" | "Hindsight", response: Response) {
+  const rawBody = await response.text();
+  let parsed: { error?: { code?: unknown; type?: unknown; message?: unknown } } = {};
+
+  try {
+    parsed = JSON.parse(rawBody) as typeof parsed;
+  } catch {
+    // Keep the response body out of logs when the provider does not return JSON.
+  }
+
+  const error = parsed.error;
+  return new ProviderRequestError(
+    provider,
+    response.status,
+    typeof error?.code === "string" ? error.code : typeof error?.type === "string" ? error.type : undefined,
+    redactProviderMessage(error?.message),
+  );
+}
+
 function scoreFor(result: RecallResult) {
   const score = result.scores?.final;
   return typeof score === "number" ? Math.max(0, Math.min(1, score)) : 0.5;
@@ -189,6 +242,7 @@ export async function recallIncidentMemories(incident: IncidentInput) {
   ].join(" ");
 
   try {
+    await verifyHindsightBank(client);
     const response = await client.recall(hindsightBankId, query, {
       maxTokens: 4096,
       budget: "mid",
@@ -199,10 +253,10 @@ export async function recallIncidentMemories(incident: IncidentInput) {
       memories: response.results.slice(0, 6).map((result) => toMemory(incident, result)),
       warning: undefined,
     };
-  } catch {
+  } catch (error) {
     return {
       memories: [] as Memory[],
-      warning: "Hindsight could not be reached for this investigation. No historical memory was used.",
+      warning: `${hindsightFailureMessage(error)} No historical memory was used.`,
     };
   }
 }
@@ -217,6 +271,7 @@ export async function listIncidentMemories(query: string) {
   }
 
   try {
+    await verifyHindsightBank(client);
     const response = await client.recall(hindsightBankId, query, {
       maxTokens: 4096,
       budget: "low",
@@ -235,10 +290,10 @@ export async function listIncidentMemories(query: string) {
       memories: response.results.slice(0, 30).map((result) => toMemory(placeholderIncident, result)),
       warning: undefined,
     };
-  } catch {
+  } catch (error) {
     return {
       memories: [] as Memory[],
-      warning: "Hindsight could not be reached while loading history.",
+      warning: `${hindsightFailureMessage(error)} History could not be loaded.`,
     };
   }
 }
@@ -344,7 +399,7 @@ export async function analyzeWithGroq(incident: IncidentInput, memories: Memory[
   });
 
   if (!response.ok) {
-    throw new Error(`Groq returned HTTP ${response.status}`);
+    throw await providerErrorFromResponse("Groq", response);
   }
 
   const body = (await response.json()) as {
@@ -375,14 +430,15 @@ export async function verifyHindsightConnection() {
 
   try {
     await client.getVersion();
+    await verifyHindsightBank(client);
     return {
       configured: true,
       message: `Connected to Hindsight Cloud memory bank ${hindsightBankId}.`,
     };
-  } catch {
+  } catch (error) {
     return {
       configured: true,
-      message: "Hindsight credentials are present, but the service could not be reached.",
+      message: hindsightFailureMessage(error),
     };
   }
 }

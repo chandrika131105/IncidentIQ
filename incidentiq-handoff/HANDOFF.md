@@ -34,7 +34,7 @@ HTTP 401
 Authentication failed: Invalid API key format
 ```
 
-The Replit Secrets inventory confirms that `GROQ_API_KEY` and `HINDSIGHT_API_KEY` exist, but their values are not valid credentials for the configured providers. Secret values were never printed or copied into this handoff.
+The first live run showed invalid provider credentials. After the secrets were replaced through the secure flow, both providers authenticated successfully. Secret values were never printed or copied into this handoff.
 
 The Groq URL, bearer authorization format, JSON request shape, and configured model are correct. Current Groq documentation lists `openai/gpt-oss-120b` as an available model, so changing the model would not fix the observed 401.
 
@@ -69,7 +69,7 @@ GROQ_API_KEY=your_groq_api_key_here
 GROQ_MODEL=openai/gpt-oss-120b
 ```
 
-The current Replit environment needs valid replacement values for both `GROQ_API_KEY` and `HINDSIGHT_API_KEY` before the complete demo can succeed.
+The current Replit environment has valid provider credentials configured in Replit Secrets. Keep the actual values out of source control and handoff files.
 
 ## API endpoints
 
@@ -113,9 +113,10 @@ After replacing both secrets:
 - Frontend production build: passed with `PORT=5173 BASE_PATH=/incidentiq`.
 - Hindsight SDK contract: verified against the current official TypeScript SDK documentation and installed `@vectorize-io/hindsight-client@0.10.1` types.
 - Groq API contract and model availability: verified against current Groq documentation.
-- Live investigation request: reached Hindsight recall and Groq, then correctly returned a safe 502 because the Groq key was invalid.
-- Live demo seed request: correctly returned a safe 502 because the Hindsight key format was invalid.
-- Complete successful `INC-115` flow: not verified because valid provider credentials are still required.
+- Live investigation request before credential replacement: correctly returned a safe 502 because the Groq key was invalid.
+- Live demo seed request before credential replacement: correctly returned a safe 502 because the Hindsight key format was invalid.
+- Live demo seed after credential replacement: passed and retained all eight demo incidents.
+- Complete `INC-115` flow: passed. Hindsight recalled six memories including `INC-101`, Groq generated structured analysis from recalled context, the outcome was retained, and history returned the retained `INC-115` records.
 
 ## Install and run
 
